@@ -1,44 +1,55 @@
 # -*- coding:utf8 -*-
-# userip=119.97.98.54&basip=&acname=&oraurl=
+# userName=hswl00002832&password=677454&regArea=ah&userIp=&basIp=&acName=&oraUrl=&loginMode=2
 
 import socket
 import os
+import urllib
+import urllib2
+import cookielib
 
 if os.name != "nt":
     import fcntl
     import struct
 
-class login(object):
+class connect(object):
+    def __init__(self):
+        self.request_url = 'https://wlan.ct10000.com/login.wlan'
+        self.otherUser = 'hswl00002832'
+        self.otherUserPwd = '677454'
+        self.regArea = 'ah';
 
-    def get_lan_ip(self):
-        ip = socket.gethostbyname(socket.gethostname())
-        if ip.startswith("127.") and os.name != "nt":
-            interfaces = [
-                "eth0",
-                "eth1",
-                "eth2",
-                "wlan0",
-                "wlan1",
-                "wifi0",
-                "ath0",
-                "ath1",
-                "ppp0",
-                ]
-            for ifname in interfaces:
-                try:
-                    ip = self.get_interface_ip(ifname)
-                    break
-                except IOError:
-                    pass
-        return ip
+    def login(self):
+        cookie = cookielib.CookieJar()
+        handler = urllib2.HTTPCookieProcessor(cookie)
+        opener = urllib2.build_opener(handler)
+        opener.addheaders
 
-    def get_interface_ip(self,ifname):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        ip = socket.inet_ntoa(fcntl.ioctl(s.fileno(),
-            0x8915,struct.pack('256s',ifname[:15]))[20:24])
-        return ip
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0',
+            'Host' : 'wlan.ct10000.com',
+            'Connection' : 'keep-alive',
+            'Referer' : 'https://wlan.ct10000.com/index.wlan'
+        }
 
+        data = {
+            'userName' : self.otherUser ,
+            'password' : self.otherUserPwd ,
+            'regArea' : self.regArea ,
+            'userIp' : '' ,
+            'basIp' : '' ,
+            'acName' : '' ,
+            'oraUrl' : '' ,
+            'loginMode' : '2'
+        }
 
-login = login()
-i = login.get_lan_ip()
-print i
+        for key,value in headers.iteritems():
+            temp = (key,value)
+            opener.addheaders.append(temp)
+
+        post_data = urllib.urlencode(data)
+        response = opener.open(self.request_url,post_data)
+        return response
+
+login = connect()
+f = login.login()
+print f.read()

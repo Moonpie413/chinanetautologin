@@ -1,19 +1,23 @@
 # -*- coding:utf8 -*-
 
-import socket
-import os
 import urllib
 import urllib2
 import cookielib
 import json
+import ssl
 
 class connect(object):
+    
     def __init__(self):
+        ## 关闭证书验证
+        ssl._create_default_https_context = ssl._create_unverified_context
+
         self.request_url = 'https://wlan.ct10000.com/login.wlan'
         self.logout_url = 'https://wlan.ct10000.com/logout.wlan'
         self.otherUser = 'hswl00002832'
         self.otherUserPwd = '677454'
         self.regArea = 'ah';
+
 
         # 初始化cookie
         self.cookie = cookielib.CookieJar()

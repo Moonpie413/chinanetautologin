@@ -1,10 +1,12 @@
 # -*- coding:utf8 -*-
 
+import sqlite3
 import urllib
 import urllib2
 import cookielib
 import json
 import ssl
+import os
 
 
 class Connect(object):
@@ -58,11 +60,9 @@ class Connect(object):
             response = self.opener.open(self.request_url, post_data)
             return response.read()
         except urllib2.HTTPError as e:
-            print '连接出错，错误代码为: ' + e.code
+            raise e
         except urllib2.URLError as e:
-            print e.reason
-        except Exception as e:
-            print e
+            raise e
 
     def logout(self):
         with open('./Enc.txt') as f:
@@ -78,11 +78,34 @@ class Connect(object):
             response = self.opener.open(self.logout_url, post_data)
             return response.read()
         except urllib2.HTTPError as e:
-            print '断开失败，错误代码:为 ' + e.code
+            raise e
         except urllib2.URLError as e:
-            print e.reason
-        except Exception as e:
-            print e
+            raise e
+
+
+class SQLHandle(object):
+
+    def __init__(self):
+        # 建表语句
+        self.create_table = '''
+        CREATE TABLE log_info (
+            enc TEXT,
+            is_login BOOLEAN
+        )
+        '''
+        # 插入数据语句
+        self.insert_sql = 'INSERT INTO log_info (enc,is_login) VALUES (?,?)'
+
+        # 查询语句
+        self.query_sql = 'SELECT enc,is_login FROM log_info'
+
+        # 更新语句
+        self.updata_sql = 'UPDATE log_info SET enc=?,is_login=?'
+
+        self.conn = sqlite3.connect('chinanet.db')
+        self.curs = self.conn.cursor()
+        if not os.path.exists('chinanet.db'):
+            self.curs.execute(self.create_table)
 
 
 # 处理response

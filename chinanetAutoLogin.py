@@ -25,7 +25,6 @@ class Connect(object):
         self.opener = urllib2.build_opener(self.handler)
 
     def login(self):
-
         # 头信息
         headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0',
@@ -55,8 +54,15 @@ class Connect(object):
         post_data = urllib.urlencode(data)
 
         # 建立连接，返回response
-        response = self.opener.open(self.request_url, post_data)
-        return response.read()
+        try:
+            response = self.opener.open(self.request_url, post_data)
+            return response.read()
+        except urllib2.HTTPError as e:
+            print '连接出错，错误代码为: ' + e.code
+        except urllib2.URLError as e:
+            print e.reason
+        except Exception as e:
+            print e
 
     def logout(self):
         with open('./Enc.txt') as f:
@@ -68,25 +74,32 @@ class Connect(object):
         post_data = urllib.urlencode(data)
 
         # 建立连接，返回response
-        response = self.opener.open(self.logout_url, post_data)
-        return response.read()
+        try:
+            response = self.opener.open(self.logout_url, post_data)
+            return response.read()
+        except urllib2.HTTPError as e:
+            print '断开失败，错误代码:为 ' + e.code
+        except urllib2.URLError as e:
+            print e.reason
+        except Exception as e:
+            print e
 
 
 # 处理response
 def response_handle(response):
     # 将response字符串转为字典
     response_dict = json.loads(response)
-    susstate = response_dict['sucState']
-    respcode = response_dict['respcode']
-    encstr = response_dict['encstr']
-    if susstate == 'SUCCESS' and respcode == '0':
+    sucstate = response_dict['sucState']
+    respcode = response_dict['respCode']
+    encstr = response_dict['encStr']
+    if sucstate == 'SUCCESS' and respcode == '0':
         if encstr:
             print '连接成功'
             with open('./Enc.txt', 'w') as f:
                 f.write(encstr)
         else:
             print '断开成功'
-    if susstate == 'FAIL' and respcode == '202':
+    if sucstate == 'FAIL' and respcode == '202':
         print '连接失败'
 
 # 简单测试

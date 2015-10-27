@@ -1,23 +1,24 @@
 # -*- coding:utf8 -*-
 
-import sqlite3
 import urllib
 import urllib2
 import cookielib
 import json
 import ssl
-import os
+import sqlunit
 
 
 class Connect(object):
     def __init__(self):
         # 关闭证书验证
         ssl._create_default_https_context = ssl._create_unverified_context
+        # 如果表不存在则建表
+        sqlunit.creat()
 
         self.request_url = 'https://wlan.ct10000.com/login.wlan'
         self.logout_url = 'https://wlan.ct10000.com/logout.wlan'
-        self.otherUser = 'hswl00002832'
-        self.otherUserPwd = '677454'
+        self.otherUser = 'hswl00002402'
+        self.otherUserPwd = '253540'
         self.regArea = 'ah'
 
         # 初始化cookie
@@ -60,13 +61,18 @@ class Connect(object):
             response = self.opener.open(self.request_url, post_data)
             return response.read()
         except urllib2.HTTPError as e:
-            raise e
+            if e.code == 500:
+                print '服务器无响应，请稍后再试'
+                exit()
+            else:
+                print '服务器错误，状态码: ' + e.code
+                exit()
         except urllib2.URLError as e:
-            raise e
+            print '服务器错误,错误原因: ' + e.reason
+            exit()
 
-    def logout(self):
-        with open('./Enc.txt') as f:
-            enc_str = f.readline()
+    def logout(self, enc_str):
+
         data = {
             'Enc': enc_str
         }
@@ -78,54 +84,54 @@ class Connect(object):
             response = self.opener.open(self.logout_url, post_data)
             return response.read()
         except urllib2.HTTPError as e:
-            raise e
+            if e.code == 500:
+                print '服务器无响应，请稍后再试'
+                exit()
+            else:
+                print '服务器错误，状态码: ' + e.code
+                exit()
         except urllib2.URLError as e:
-            raise e
+            print '服务器错误,错误原因: ' + e.reason
+            exit()
+
+    # 处理response
+    def response_handle(self, response):
+        # 将response字符串转为字典
+        response_dict = json.loads(response)
+        suc_state = response_dict['sucState']
+        resp_code = response_dict['respCode']
+        enc_str = response_dict['encStr']
+        if suc_state == 'SUCCESS' and resp_code == '0':
+            if enc_str:
+                print '连接成功'
+                return enc_str
+            else:
+                print '断开成功'
+                self.cookie.clear()
+        if suc_state == 'FAIL':
+            print '请求失败，错误代码为: ' + str(resp_code)
 
 
-class SQLHandle(object):
+def main():
+    connect = Connect()
+    result = sqlunit.query()
+    if result:
+        print '正在断开...'
+        enc_str = ''.join(result.pop())
+        response = connect.logout(enc_str)
 
-    def __init__(self):
-        # 建表语句
-        self.create_table = '''
-        CREATE TABLE log_info (
-            enc TEXT,
-            is_login BOOLEAN
-        )
-        '''
-        # 插入数据语句
-        self.insert_sql = 'INSERT INTO log_info (enc,is_login) VALUES (?,?)'
+    else:
+        print '正在连接...'
+        response = connect.login()
 
-        # 查询语句
-        self.query_sql = 'SELECT enc,is_login FROM log_info'
+    handle_result = connect.response_handle(response)
+    if handle_result:
+        sqlunit.insert(handle_result)
+    else:
+        sqlunit.remove()
+    sqlunit.close()
 
-        # 更新语句
-        self.updata_sql = 'UPDATE log_info SET enc=?,is_login=?'
-
-        self.conn = sqlite3.connect('chinanet.db')
-        self.curs = self.conn.cursor()
-        if not os.path.exists('chinanet.db'):
-            self.curs.execute(self.create_table)
+if __name__ == '__main__':
+    main()
 
 
-# 处理response
-def response_handle(response):
-    # 将response字符串转为字典
-    response_dict = json.loads(response)
-    sucstate = response_dict['sucState']
-    respcode = response_dict['respCode']
-    encstr = response_dict['encStr']
-    if sucstate == 'SUCCESS' and respcode == '0':
-        if encstr:
-            print '连接成功'
-            with open('./Enc.txt', 'w') as f:
-                f.write(encstr)
-        else:
-            print '断开成功'
-    if sucstate == 'FAIL' and respcode == '202':
-        print '连接失败'
-
-# 简单测试
-connect = Connect()
-f = connect.login()
-response_handle(f)

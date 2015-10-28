@@ -5,6 +5,7 @@ import urllib2
 import cookielib
 import json
 import ssl
+import sys
 import sqlunit
 
 
@@ -59,17 +60,17 @@ class Connect(object):
         # 建立连接，返回response
         try:
             response = self.opener.open(self.request_url, post_data)
-            return response.read()
+            response_str = response.read()
         except urllib2.HTTPError as e:
             if e.code == 500:
                 print '服务器无响应，请稍后再试'
-                exit()
             else:
                 print '服务器错误，状态码: ' + e.code
-                exit()
+            sys.exit()
         except urllib2.URLError as e:
-            print '服务器错误,错误原因: ' + e.reason
-            exit()
+            print '服务器错误,错误原因: ' + str(e.reason)
+            sys.exit()
+        return response_str
 
     def logout(self, enc_str):
 
@@ -82,32 +83,34 @@ class Connect(object):
         # 建立连接，返回response
         try:
             response = self.opener.open(self.logout_url, post_data)
-            return response.read()
+            response_str = response.read()
         except urllib2.HTTPError as e:
             if e.code == 500:
                 print '服务器无响应，请稍后再试'
-                exit()
             else:
-                print '服务器错误，状态码: ' + e.code
-                exit()
+                print '服务器错误，状态码: ' + e.code + '请尝试重新连接'
+            sys.exit()
         except urllib2.URLError as e:
-            print '服务器错误,错误原因: ' + e.reason
-            exit()
+            print '服务器错误,错误原因: ' + str(e.reason)
+            sqlunit.remove()
+            sys.exit()
+        return response_str
 
     # 处理response
-    def response_handle(self, response):
+    def response_handle(self, response_str):
         # 将response字符串转为字典
-        response_dict = json.loads(response)
+        response_dict = json.loads(response_str)
         suc_state = response_dict['sucState']
         resp_code = response_dict['respCode']
         enc_str = response_dict['encStr']
         if suc_state == 'SUCCESS' and resp_code == '0':
             if enc_str:
                 print '连接成功'
-                return enc_str
+                sqlunit.insert(enc_str)
             else:
                 print '断开成功'
                 self.cookie.clear()
+                sqlunit.remove()
         if suc_state == 'FAIL':
             print '请求失败，错误代码为: ' + str(resp_code)
 
@@ -124,11 +127,7 @@ def main():
         print '正在连接...'
         response = connect.login()
 
-    handle_result = connect.response_handle(response)
-    if handle_result:
-        sqlunit.insert(handle_result)
-    else:
-        sqlunit.remove()
+    connect.response_handle(response)
     sqlunit.close()
 
 if __name__ == '__main__':

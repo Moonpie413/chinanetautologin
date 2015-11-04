@@ -19,7 +19,7 @@ query_sql = 'SELECT enc FROM log_info'
 # 删除语句
 delete_sql = 'DELETE FROM log_info'
 
-conn = sqlite3.connect('chinanet.db')
+conn = sqlite3.connect('cfgfolder/chinanet.db')
 curs = conn.cursor()
 
 

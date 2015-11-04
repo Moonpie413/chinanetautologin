@@ -1,7 +1,7 @@
 # -*- coding:utf8 -*-
+import os
 
 import sqlite3
-
 
 # 建表语句
 create_table = '''
@@ -19,6 +19,8 @@ query_sql = 'SELECT enc FROM log_info'
 # 删除语句
 delete_sql = 'DELETE FROM log_info'
 
+if not os.path.exists('cfgfolder'):
+    os.mkdir('cfgfolder')
 conn = sqlite3.connect('cfgfolder/chinanet.db')
 curs = conn.cursor()
 

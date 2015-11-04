@@ -57,6 +57,5 @@ docs/_build/
 target/
 
 #user
-/test.py
-/chinanet.db
 .idea/
+

@@ -7,20 +7,25 @@ import json
 import ssl
 import sys
 import sqlunit
+import platform
+import config
+
+if platform.system() == 'Windows':
+    # 关闭证书验证
+    ssl._create_default_https_context = ssl._create_unverified_context
 
 
 class Connect(object):
     def __init__(self):
-        # 关闭证书验证
-        ssl._create_default_https_context = ssl._create_unverified_context
+
         # 如果表不存在则建表
         sqlunit.creat()
 
         self.request_url = 'https://wlan.ct10000.com/login.wlan'
         self.logout_url = 'https://wlan.ct10000.com/logout.wlan'
-        self.otherUser = 'hswl00002402'
-        self.otherUserPwd = '253540'
-        self.regArea = 'ah'
+        self.otherUser = ''
+        self.otherUserPwd = ''
+        self.regArea = ''
 
         # 初始化cookie
         self.cookie = cookielib.CookieJar()
@@ -31,7 +36,8 @@ class Connect(object):
     def login(self):
         # 头信息
         headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0',
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:41.0) ' +
+            'Gecko/20100101 Firefox/41.0',
             'Host': 'wlan.ct10000.com',
             'Connection': 'keep-alive',
             'Referer': 'https://wlan.ct10000.com/index.wlan'
@@ -113,10 +119,10 @@ class Connect(object):
                 sqlunit.remove()
         if suc_state == 'FAIL':
             print '请求失败，错误代码为: ' + str(resp_code)
+            sqlunit.remove()
 
 
-def main():
-    connect = Connect()
+def start_connect(connect):
     result = sqlunit.query()
     if result:
         print '正在断开...'
@@ -130,7 +136,15 @@ def main():
     connect.response_handle(response)
     sqlunit.close()
 
-if __name__ == '__main__':
-    main()
 
+if __name__ == '__main__':
+    if config.config_check():
+        connect = Connect()
+        info = config.read_config()
+        connect.otherUser = info[0]
+        connect.otherUserPwd = info[1]
+        connect.regArea = info[2]
+        start_connect(connect)
+    else:
+        sys.exit()
 

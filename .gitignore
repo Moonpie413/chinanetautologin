@@ -58,4 +58,6 @@ target/
 
 #user
 .idea/
+/cfgfolder/chinanet.db
+/cfgfolder/info.cfg
 
